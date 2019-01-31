@@ -94,14 +94,14 @@ def compressString(Message):
 	#return np.ceil(np.log2(nbsymboles))*len(Message)
 	#charRange=["AB","CD","KE","ZK","JW"]
 #si on ajoute des paires, i doit être incrémenté de 2
-charRange="ABCDEF"	
+charRange="ABCDEFG"	
 tailleEspace = len(charRange)
 nomFichier = "output_"+charRange+"_.csv"
 file = open(nomFichier,"w")
 file.write("Taille de base;Taille compressé;Gain de taille;Temps de compression;Coefficient de compression \n")
 
 nbIteration = 20
-for i in range(10,500,10):
+for i in range(10,1500,25):
 	sommeTaille = 0
 	sommeTime = 0
 	for j in range(0,nbIteration):
