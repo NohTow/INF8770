@@ -48,16 +48,19 @@ def main():
 				#on quantifie chaque bloc
 				array[i:i+8, j:j+8, k] = quantize(array[i:i+8, j:j+8, k],'lum' if k == 0 else 'chrom')
 				#block = quantize(block,'lum' if k == 0 else 'chrom')
-				test=(np.array2string(array[i:i+8, j:j+8, k], precision=2, separator=',',suppress_small=True))
-				print(test[0])
+				#test=(np.array2string(array[i:i+8, j:j+8, k], precision=2, separator=',',suppress_small=True))
+				#print(test[0])
 				
-				
+	print(array[0:8,0:8,0])
+	
+	for i in range(0,8,1):
+		fichier.write("\n")
+		for j in range (0,8,1):
+			fichier.write(str(array[i,j,0])+" ")
 
-	print(array[0])
+	print(zigzag_single(array[0:8,0:8,0]))
 	
 	print("========")
-	 
-	
 	#Partie 2/3/4 bis : Retour en Y'CbCr 
 	
 	for i in range(0, rows, 8):
