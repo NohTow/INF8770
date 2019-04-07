@@ -3,6 +3,7 @@ from PIL import Image
 from utils import * 
 import argparse
 from scipy import fftpack
+import sys
 #https://github.com/ghallak/jpeg-python
 #https://stackoverflow.com/questions/7762948/how-to-convert-an-rgb-image-to-numpy-array
 
@@ -24,6 +25,7 @@ def main():
 	
 	#Partie 1 : conversion RGB/Y'CbCr
 	YCbCr = image.convert('YCbCr')
+	lgOrignal = sys.getsizeof(array)
 	array = convert_to_array(YCbCr)
 	#print(array[0])
 	print("======")
@@ -40,29 +42,59 @@ def main():
 	DictionnaireFull = []
 	MessageRLEFinal=[]
 	test = ""
-
+	Y = array[:,:,0]
+	Cb = np.zeros((rows/2, cols/2))
+	Cr = np.zeros((rows/2, cols/2))
+	for i in range(0, rows, 2):
+		for j in range(0, cols, 2):
+			Cb[i,j] = array[i,j,1]
+			Cr[i,j] = array[i,j,2]
 	for i in range(0, rows, 8):
 		for j in range(0, cols, 8):
-			for k in range(3):
-				block = array[i:i+8, j:j+8, k]
+				block = array[i:i+8, j:j+8, 0]
 				
 				#on effectue la dct sur le bloc, voir https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.fftpack.dct.html
-				array[i:i+8, j:j+8, k] = fftpack.dct(fftpack.dct(block.T, axis=0, norm='ortho').T, axis=1, norm='ortho')
+				Y[i:i+8,j:j+8] = fftpack.dct(fftpack.dct(block.T, axis=0, norm='ortho').T, axis=1, norm='ortho')
 				#block = fftpack.dct(fftpack.dct(block.T, norm='ortho').T, norm='ortho')
 				#on quantifie chaque bloc
-				
-				array[i:i+8, j:j+8, k] = quantize(array[i:i+8, j:j+8, k],'lum' if k == 0 else 'chrom')
+				Y[i:i+8,j:j+8] = quantize(Y[i:i+8,j:j+8],'lum')
 				
 				#block = quantize(block,'lum' if k == 0 else 'chrom')
 				#test=(np.array2string(array[i:i+8, j:j+8, k], precision=2, separator=',',suppress_small=True))
 				#print(test[0])
 				#print(zigzag_single(array[i:i+8, j:j+8, k]))
 				#print(zigzag_single(array[i:i+8, j:j+8, k]))
-				Message, Dictionnaire = encodeHuffman(zigzag_single(array[i:i+8, j:j+8, k]))
+				Message, Dictionnaire = encodeHuffman(zigzag_single(Y[i:i+8,j:j+8]))
 				#MessageCode.append(Message)
 				DictionnaireFull.append(Dictionnaire)
 				MessageRLEFinal.append(encodeRLE(Message))
+	for i in range(0, rows/2, 8):
+		for j in range(0, cols/2, 8):
+			Cb[i:i+8,j:j+8] = fftpack.dct(fftpack.dct(Cb[i:i+8,j:j+8].T, axis=0, norm='ortho').T, axis=1, norm='ortho')
+			Cr[i:i+8,j:j+8] = fftpack.dct(fftpack.dct(Cr[i:i+8,j:j+8].T, axis=0, norm='ortho').T, axis=1, norm='ortho')
+			#block = fftpack.dct(fftpack.dct(block.T, norm='ortho').T, norm='ortho')
+			#on quantifie chaque bloc
+			Cb[i:i+8,j:j+8] = quantize(Cb[i:i+8,j:j+8],'chrom')
+			Cr[i:i+8,j:j+8] = quantize(Cr[i:i+8,j:j+8],'chrom')
+			
+			#block = quantize(block,'lum' if k == 0 else 'chrom')
+			#test=(np.array2string(array[i:i+8, j:j+8, k], precision=2, separator=',',suppress_small=True))
+			#print(test[0])
+			#print(zigzag_single(array[i:i+8, j:j+8, k]))
+			#print(zigzag_single(array[i:i+8, j:j+8, k]))
+			Message, Dictionnaire = encodeHuffman(zigzag_single(Cb[i:i+8,j:j+8]))
+			#MessageCode.append(Message)
+			DictionnaireFull.append(Dictionnaire)
+			MessageRLEFinal.append(encodeRLE(Message))
+			Message, Dictionnaire = encodeHuffman(zigzag_single(Cb[i:i+8,j:j+8]))
+			#MessageCode.append(Message)
+			DictionnaireFull.append(Dictionnaire)
+			MessageRLEFinal.append(encodeRLE(Message))
+
+	lgFinal = sys.getsizeof(MessageRLEFinal)
+	lgFinal = lgFinal + sys.getsizeof(DictionnaireFull)
 	
+	print("Le taux de compression est de "+str(1-(lgFinal/lgOrignal)))
 	#print(array[0:8,0:8,0])
 	#print(array[0:8,0:8,1])
 	#print(array[0:8,0:8,2])
@@ -96,9 +128,9 @@ def main():
 	#	np.savetxt(fichier,array[i])		
 	
 	#Partie 1 bis : conversion Y'CbCr/RGB
-	YCbCr = Image.fromarray(np.uint8(array))
 	image = YCbCr.convert('RGB')
 	save_image(image, output_file)
+	
 	return 1
 
 	
